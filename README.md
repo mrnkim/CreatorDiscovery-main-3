@@ -8,51 +8,55 @@ Creator Discovery is a Next.js 15 application that showcases Twelve Labs video-u
 
 Together these features illustrate how to combine Twelve Labs APIs with vector search and modern React tooling to build powerful media-intelligence products.
 
+📌 [Demo](https://creator-discovery-reskin.vercel.app/)
+[![App Demo](./public/introduction.png)](https://creator-discovery-reskin.vercel.app/)
+
+## App Demo Video
+
+[![App Demo Video](./public/app_demo.png)](https://www.loom.com/share/2f82fa0e05c44ae5a23a300af114f011?sid=d1e95613-75c7-4499-9a07-1c54a920c999)
+
 ---
 
 ## Key Features
 
-| Feature | Highlights |
-|---------|------------|
-| **Creator–Brand Match** | • Generates text & video embeddings (Twelve Labs Embed API) <br>• Stores/queries in Pinecone with simple 15 % boost when a clip appears in both text & video results <br>• Bidirectional *Source → Target* toggle (Brand→Creator default) <br>• React Query powered dropdown & results grid |
-| **Semantic Search** | • Text **and** image search (Search API) <br>• Optional image cropping modal before search <br>• Scope toggles: **All · Brand · Creator** <br>• Facet filters: Brand / Creator category, Vertical / Horizontal format <br>• Clickable thumbnails open a modal preview on the exact time-range |
-| **Brand Mention Detection** | • Uses **Analyze** API with a structured prompt to extract product events <br>• Zod validation & deduplication/merging of overlapping events <br>• Library & per-video heatmaps with *Total Exposure* summary row (50 time buckets) <br>• Bounding-box overlay and event description in video modal <br>• Filters: creators, formats, regions, brands, duration threshold, time window |
+| Feature                     | Highlights                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Creator–Brand Match**     | • Generates text & video embeddings (Twelve Labs Embed API) <br>• Stores/queries in Pinecone <br>• Bidirectional _Source → Target_ toggle (Brand→Creator default) <br>• React Query powered dropdown & results grid                                                                                                                                                                |
+| **Semantic Search**         | • Text **and** image search (Search API) <br>• Optional image cropping modal before search <br>• Filters: All / Brands / Creators scope, Vertical / Horizontal format <br>• Clickable thumbnails open a modal preview on the exact time-range                                                                                                                                      |
+| **Brand Mention Detection** | • Uses **Analyze** API with a structured prompt to extract product events <br>• Preservation of individual segments (no deduplication) <br>• Library & per-video heatmaps with _Total Exposure_ summary row (50 time buckets) <br>• Event description and location details in video modal <br>• Filters: creators, formats, styles, tones, brands, duration threshold, time window |
 
 ---
 
 ## Architecture & Design
 
 ### Tech Stack
+
 - **Next.js 15 App Router** (SSR + API routes)
 - **TypeScript** throughout
 - **React Query** for data-fetching / caching
-- **TailwindCSS v4** with inline CSS variables (see `src/app/globals.css`)
-- **Zod** for runtime schema validation
+- **TailwindCSS v3.4** with inline CSS variables
 - **Pinecone** vector DB for embeddings
 
-### High-Level Data Flow
+### End-to-End Workflow
 
-| Flow | Steps |
-|------|-------|
-| Creator–Brand Match | ① Select source video → ② Ensure embeddings exist (store via `/api/vectors/store`) → ③ Query Pinecone (`/api/embeddingSearch/...`) → ④ Merge & boost results → ⑤ Show grid |
-| Semantic Search (Text) | ① POST `/api/search/text` → ② Twelve Labs Search API parallel across indices → ③ Normalize & merge → ④ Fetch video details for UI |
-| Semantic Search (Image) | Same as text but multipart upload to Search API (image or cropped blob) |
-| Brand Mention Detection | ① GET/POST `/api/brand-mentions/events` → ② If cached, return; else POST `/api/brand-mentions/analyze` → ③ Parse, validate, deduplicate → ④ Save to `user_metadata` → ⑤ Build heatmap buckets in client |
+![End-to-End Workflow](./public/end-to-end_workflow.png)
 
 ### Project Structure (highlights)
 
 ```
 src/
   app/
+    page.tsx                       ← main entry page with tab navigation
     creator-brand-match/           ← feature page 1 (page.tsx)
     semantic-search/               ← feature page 2
     brand-mention-detection/       ← feature page 3
+    admin/                         ← admin page for video management
     api/
       embeddingSearch/…            ← textToVideo & videoToVideo routes
       search/{text,image,byToken}  ← semantic search routes
       brand-mentions/{analyze,events}
       videos/…                     ← Twelve Labs video proxy routes
-      vectors/{exists,store,…}
+      vectors/{exists,store,check-status,test-connection}
       proxy-image/route.ts         ← remote image CORS proxy
   components/
     Heatmap.tsx, VideoModalSimple.tsx, VideosDropdown.tsx …
@@ -68,21 +72,17 @@ src/
 
 ## Setup & Configuration
 
-### Prerequisites
-- **Node 18 or later**
-- **npm** (or pnpm/yarn)
-
 ### Environment Variables
 
 Create `.env.local` (or copy the example) with:
 
 ```
 TWELVELABS_API_KEY=YOUR_API_KEY
-TWELVELABS_API_BASE_URL=https://api.twelvelabs.io
-NEXT_PUBLIC_BRAND_INDEX_ID=brd_xxxxxxxxx
-NEXT_PUBLIC_CREATOR_INDEX_ID=crtr_xxxxxxxxx
+TWELVELABS_API_BASE_URL=https://api.twelvelabs.io/v1.3
+NEXT_PUBLIC_BRAND_INDEX_ID=YOUR_INDEX_ID
+NEXT_PUBLIC_CREATOR_INDEX_ID=YOUR_INDEX_ID
 PINECONE_API_KEY=YOUR_PINECONE_KEY
-PINECONE_INDEX=creator-discovery
+PINECONE_INDEX=YOUR_PINECONE_INDEX
 ```
 
 ### Install & Run
@@ -99,50 +99,4 @@ npm run build
 npm start
 ```
 
-### Quick Verification
-
-1. `GET /api/vectors/test-connection` → should return Pinecone stats.
-2. Open:
-   - `/creator-brand-match`
-   - `/semantic-search`
-   - `/brand-mention-detection`
-
-If pages render without errors the env vars are configured correctly.
-
 ---
-
-## Usage Guide
-
-| Path | What to do |
-|------|------------|
-| `/creator-brand-match` | 1. Choose *Brand* or *Creator* source. 2. Pick a video from dropdown. 3. Click **Find Matches**. 4. Review top results. |
-| `/semantic-search` | • Enter text and press **Search** – or – click **Search by Image**, upload/crop, then search.<br>• Use facet chips to narrow results.<br>• Click a thumbnail for in-context modal playback. |
-| `/brand-mention-detection` | 1. Apply filters (optional). 2. In library view, click a heatmap cell to drill into per-video view. 3. Click a brand-time cell to open the modal with bounding box and description. |
-
----
-
-## Selected API Routes
-
-| Route | Purpose |
-|-------|---------|
-| `POST /api/embeddingSearch/textToVideo` | Generate text embedding → query Pinecone |
-| `POST /api/embeddingSearch/videoToVideo` | Use video embedding segments to query |
-| `POST /api/search/text` / `POST /api/search/image` | Unified semantic search (text / image) |
-| `GET/POST /api/brand-mentions/events` | Cached retrieval or batch analyze for brand mentions |
-| `POST /api/brand-mentions/analyze` | Run Twelve Labs **Analyze** prompt and deduplicate |
-| `GET /api/videos` | List videos in an index |
-| `PUT /api/videos/updateUserMetadata` | Save arbitrary `user_metadata` |
-| `POST /api/vectors/store` | Upsert embedding vectors into Pinecone |
-| `GET /api/proxy-image` | Server-side fetch of remote image to avoid CORS |
-
----
-
-## Notes & Troubleshooting
-
-- **Missing Env Vars** – Most API routes return `500` with clear error if keys/IDs are absent.
-- **Rate Limits** – Twelve Labs free tier may throttle; check response status 429.
-- **Embeddings not ready** – Match feature shows progress bar while vectors are stored; rerun if interrupted.
-- **Thumbnails vs Video URLs** – Some index items may lack `hls.video_url`; modal opens only when present.
-- **Large video sets** – `/api/videos` caps to 50 per request; update pagination logic if needed.
-
-Happy hacking!
