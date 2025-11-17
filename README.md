@@ -8,11 +8,10 @@ Creator Discovery is a Next.js 15 application that showcases Twelve Labs video-u
 
 Together these features illustrate how to combine Twelve Labs APIs with vector search and modern React tooling to build powerful media-intelligence products.
 
-📌 [Demo](https://creator-discovery-reskin.vercel.app/)
-[![App Demo](./public/introduction.png)](https://creator-discovery-reskin.vercel.app/)
+📌 [Demo App](https://creator-discovery.vercel.app/)
+[![App Demo](./public/introduction.png)](https://creator-discovery.vercel.app/)
 
 ## App Demo Video
-
 [![App Demo Video](./public/app_demo.png)](https://www.loom.com/share/2f82fa0e05c44ae5a23a300af114f011?sid=d1e95613-75c7-4499-9a07-1c54a920c999)
 
 ---
