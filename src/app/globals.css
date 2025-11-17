@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Milling";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://d2n8i6crd2t3p1.cloudfront.net/font/milling/205TF-Milling-Duplex1mm.woff2")
+    format("woff2");
+}
+
+@font-face {
+  font-family: "Milling";
+  font-style: normal;
+  font-weight: 700;
+  src: url("https://d2n8i6crd2t3p1.cloudfront.net/font/milling/205TF-Milling-Triplex1mm.woff2")
+    format("woff2");
+}
+
+:root {
+  --background: #f4f3f3;
+  --foreground: #171717;
+
+  /* Theme colors */
+  --color-white-200: #f9f9f9;
+  --color-zinc-100: #f4f3f3;
+  --color-gray-200: #ececec;
+  --color-gray-300: #d9d9d9;
+  --color-gray-500: #bdbcbb;
+  --color-blue: #c4eefe;
+  --color-light-purple: #fbdfff;
+  --color-light-pink: #ffdfeb;
+  --color-light-green: #bff3a4;
+  --color-light-orange: #fde3a2;
+  --color-pink: #ffb0cd;
+  --color-red: #e22e22;
+  --color-generate: #fde3ae;
+  --color-green: #60e21b;
+  --color-orange: #faba17;
+  --color-confidence-high: #30710e;
+  --color-confidence-medium: #846617;
+  --color-confidence-low: #1d1c1c;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Milling", var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Zinc color palette (legacy) */
+  --zinc-50: #f9faf9;
+  --zinc-100: #f4f3f3;
+  --zinc-200: #ececec;
+  --zinc-300: #d4d5d2;
+  --zinc-400: #c5c7c3;
+  --zinc-500: #b7b9b4;
+  --zinc-600: #929490;
+  --zinc-700: #6f706d;
+  --zinc-800: #585956;
+  --zinc-900: #333431;
+  --zinc-1000: #222222;
+  --zinc-1100: #171717;
+  --zinc-1200: #000000;
+}
+
+/* @media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+} */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Milling", Arial, Helvetica, sans-serif;
+}
+
+/* Custom scrollbar styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--zinc-400) var(--zinc-200);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: var(--zinc-200);
+  border-radius: 3px;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--zinc-400);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--zinc-500);
+}
