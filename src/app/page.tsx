@@ -80,6 +80,19 @@ export default function Home() {
             Creator Discovery
           </h1>
           {/* <p className="text-sm" style={{ color: 'var(--zinc-700)' }}>Discover creators, analyze brand mentions, and find the perfect matches using AI-powered video analysis</p> */}
+          <div className="mt-1 pb-1">
+            <div className="flex flex-wrap gap-2 mb-2 items-center">
+              <span
+                className="inline-block flex-shrink-0 rounded-md px-1 py-0.5 text-xs font-medium"
+                style={{
+                  border: "1px solid #8F8984",
+                  color: "#8F8984",
+                }}
+              >
+                SAMPLE APP
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Navigation */}
