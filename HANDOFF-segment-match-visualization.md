@@ -41,9 +41,23 @@ Creator Brand Match에서 매칭 결과를 보여줄 때, 어떤 구간끼리 �
 - `src/hooks/apiHooks.ts` — `textToVideoEmbeddingSearch` 반환값에 searchTerm 포함, 메타데이터 파싱 개선
 - `src/app/creator-brand-match/page.tsx` — textSearchTerm state 추가, SimilarVideoResults에 전달
 
+### 6. Segment Expand/Collapse & Source Labels
+기존: 세그먼트 매치를 항상 상위 3개만 표시 → BOTH인 크리에이터가 왜 High인지 맥락 부족.
+변경: 기본 3개 표시 + "더 보기" 버튼으로 전체 펼치기. 각 세그먼트에 소스 타입 라벨(VID/TXT) 추가.
+
+- 3개 이하: 그대로 표시
+- 4개 이상: 3개만 보여주고 `+ N개 더 보기` 버튼, 펼치면 전체 표시, `접기`로 축소
+- video-to-video 매치: 파란색 `VID` 라벨
+- text-to-video 매치: 보라색 `TXT` 라벨
+- 펼쳐보면 "아 이 크리에이터는 TXT 매치도 있어서 BOTH → High구나" 납득 가능
+
+**Files:**
+- `src/components/SimilarVideoResults.tsx` — `expandedSegments` state 추가, 조건부 slice, 더 보기/접기 버튼, VID/TXT 소스 라벨
+
 ## Matched Segments UI Format
-- Video-to-video: `0:12-0:18 ↔ 0:34-0:40  92%`
-- Text-to-video: `"Charlotte Tilbury as…" ↔ 0:34-0:40  28%`
+- Video-to-video: `VID  0:12-0:18 ↔ 0:34-0:40  92%`
+- Text-to-video: `TXT  "Charlotte Tilbury as…" ↔ 0:34-0:40  28%`
+- 3개 초과 시: `+ 2개 더 보기` 버튼
 
 ## Future Work
 - 세그먼트 클릭 시 소스 비디오의 해당 구간도 나란히 재생하는 모달/팝업 (side-by-side comparison)
