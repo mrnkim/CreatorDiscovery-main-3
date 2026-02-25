@@ -362,7 +362,7 @@ export async function textToVideoEmbeddingSearch(
   selectedVideoId: string,
   sourceIndexId: string,
   targetIndexId: string
-): Promise<EmbeddingSearchResult[]> {
+): Promise<{ results: EmbeddingSearchResult[]; searchTerm: string }> {
   try {
     // Get video details to derive search term
     const videoDetails = await fetchVideoDetails(selectedVideoId, sourceIndexId);
@@ -372,13 +372,31 @@ export async function textToVideoEmbeddingSearch(
 
     // Try to get meaningful text from the video metadata
     if (videoDetails.user_metadata) {
-      // Check for descriptive fields in user metadata
-      const metadataValues = Object.values(videoDetails.user_metadata)
-        .filter(value => typeof value === 'string' && value.length > 0);
+      const meta = videoDetails.user_metadata;
+      const parts: string[] = [];
 
-      if (metadataValues.length > 0) {
-        // Join the first few metadata values
-        searchTerm = metadataValues.slice(0, 3).join(' ');
+      // Extract brand names from brand_product_events
+      if (meta.brand_product_events && typeof meta.brand_product_events === 'string') {
+        try {
+          const events = JSON.parse(meta.brand_product_events) as { brand?: string }[];
+          const brands = [...new Set(events.map(e => e.brand).filter(Boolean))];
+          if (brands.length > 0) parts.push(brands.join(', '));
+        } catch { /* ignore parse errors */ }
+      }
+
+      // Extract creator, tones, styles
+      if (meta.video_creator && typeof meta.video_creator === 'string') {
+        parts.push(meta.video_creator);
+      }
+      if (meta.video_tones && typeof meta.video_tones === 'string') {
+        try { parts.push(JSON.parse(meta.video_tones).join(', ')); } catch { /* ignore */ }
+      }
+      if (meta.video_styles && typeof meta.video_styles === 'string') {
+        try { parts.push(JSON.parse(meta.video_styles).join(', ')); } catch { /* ignore */ }
+      }
+
+      if (parts.length > 0) {
+        searchTerm = parts.join(' ');
       }
     }
 
@@ -398,10 +416,10 @@ export async function textToVideoEmbeddingSearch(
       indexId: targetIndexId
     });
 
-    return response.data;
+    return { results: response.data, searchTerm };
   } catch (error) {
     console.error('Error in text-to-video search:', error);
-    return [];
+    return { results: [], searchTerm: '' };
   }
 }
 

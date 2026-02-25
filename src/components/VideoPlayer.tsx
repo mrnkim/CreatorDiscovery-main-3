@@ -18,7 +18,7 @@ interface VideoPlayerProps extends VideoProps {
   className?: string;
   autoplay?: boolean;
   onTimeUpdate?: (currentTime: number) => void;
-  onPlayerReady?: (player: { seekTo: (time: number) => void }) => void;
+  onPlayerReady?: (player: { seekTo: (time: number) => void; play: () => void; pause: () => void }) => void;
   onReadyChange?: (ready: boolean) => void;
   initialMuted?: boolean;
   seekStart?: number;
@@ -180,6 +180,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           if (playerRef.current) {
             playerRef.current.currentTime = time;
           }
+        },
+        play: () => {
+          setPlaying(true);
+        },
+        pause: () => {
+          setPlaying(false);
         },
       });
     }

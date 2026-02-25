@@ -43,9 +43,12 @@ export async function POST(req: Request) {
       includeMetadata: true,
     });
 
+    const MAX_SEGMENTS_PER_VIDEO = 3;
+
     interface SearchResult {
       metadata?: Record<string, string | number | boolean | string[]>;
-      score: number; 
+      score: number;
+      segmentMatches: { targetStartTime: number; targetEndTime: number; score: number }[];
     }
 
     const uniqueResults = Object.values(
@@ -53,15 +56,35 @@ export async function POST(req: Request) {
         const videoId = current.metadata?.tl_video_id as string;
         if (!videoId) return acc;
 
-        if (!acc[videoId] || acc[videoId].score < (current.score || 0)) {
+        const segmentPair = {
+          targetStartTime: (current.metadata?.start_time as number) ?? 0,
+          targetEndTime: (current.metadata?.end_time as number) ?? 0,
+          score: current.score || 0,
+        };
+
+        if (!acc[videoId]) {
           acc[videoId] = {
             metadata: current.metadata,
-            score: current.score || 0
+            score: current.score || 0,
+            segmentMatches: [segmentPair],
           };
+        } else {
+          if (acc[videoId].score < (current.score || 0)) {
+            acc[videoId].score = current.score || 0;
+            acc[videoId].metadata = current.metadata;
+          }
+          acc[videoId].segmentMatches.push(segmentPair);
         }
         return acc;
       }, {})
     );
+
+    // Sort segment matches within each result and limit
+    uniqueResults.forEach(result => {
+      result.segmentMatches = result.segmentMatches
+        .sort((a, b) => b.score - a.score)
+        .slice(0, MAX_SEGMENTS_PER_VIDEO);
+    });
 
     // Sort by score
     const sortedResults = uniqueResults.sort((a, b) => b.score - a.score);

@@ -266,6 +266,7 @@ export default function CreatorBrandMatch() {
   const [similarResults, setSimilarResults] = useState<EmbeddingSearchResult[]>(
     []
   );
+  const [textSearchTerm, setTextSearchTerm] = useState<string>("");
   const [isLoadingEmbeddings, setIsLoadingEmbeddings] = useState(false);
   const [targetVideos, setTargetVideos] = useState<VideoData[]>([]);
   const [embeddingsReady, setEmbeddingsReady] = useState(false);
@@ -457,7 +458,7 @@ export default function CreatorBrandMatch() {
       // Run searches in parallel for better performance
       const searchStartTime = Date.now();
 
-      const [textResults, videoResults] = await Promise.all([
+      const [textSearchResult, videoResults] = await Promise.all([
         textToVideoEmbeddingSearch(
           selectedVideoId,
           sourceIndexId,
@@ -472,8 +473,10 @@ export default function CreatorBrandMatch() {
 
       const searchTime = Date.now() - searchStartTime;
 
+      setTextSearchTerm(textSearchResult.searchTerm);
+
       // Combine results with a boost for videos that appear in both searches
-      const combinedResults = combineSearchResults(textResults, videoResults);
+      const combinedResults = combineSearchResults(textSearchResult.results, videoResults);
 
       setSimilarResults(combinedResults);
     } catch (error) {
@@ -545,7 +548,14 @@ export default function CreatorBrandMatch() {
 
         // Calculate combined score with a boost
         const maxScore = Math.max(textScore, videoScore);
-        const boostedScore = maxScore * 1.15; // 15% boost when in both results
+        const boostedScore = maxScore * 1.05; // 5% boost when in both results
+
+        // Merge segment matches from both sources, keep top 5
+        const textSegments = existingResult.segmentMatches || [];
+        const videoSegments = result.segmentMatches || [];
+        const mergedSegments = [...videoSegments, ...textSegments]
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 5);
 
         resultMap.set(videoId, {
           ...existingResult,
@@ -553,6 +563,7 @@ export default function CreatorBrandMatch() {
           videoScore,
           textScore,
           originalSource: "BOTH",
+          segmentMatches: mergedSegments,
         });
       } else {
         // Video only in video search
@@ -564,22 +575,8 @@ export default function CreatorBrandMatch() {
       }
     });
 
-    // Convert map to array and sort by match level (High, Medium, Low), then by score within each level
-    return Array.from(resultMap.values()).sort((a, b) => {
-      const levelA = getMatchLevel(a.score, a.originalSource);
-      const levelB = getMatchLevel(b.score, b.originalSource);
-
-      // First sort by match level priority (High > Medium > Low)
-      const levelPriorityA = getMatchLevelPriority(levelA);
-      const levelPriorityB = getMatchLevelPriority(levelB);
-
-      if (levelPriorityA !== levelPriorityB) {
-        return levelPriorityB - levelPriorityA; // Higher priority first
-      }
-
-      // If same level, sort by score (higher score first)
-      return b.score - a.score;
-    });
+    // Sort by score (higher score first) - labels are visual indicators only
+    return Array.from(resultMap.values()).sort((a, b) => b.score - a.score);
   };
 
   // Auto-select first video when videos are loaded (for both brand and creator)
@@ -753,6 +750,7 @@ export default function CreatorBrandMatch() {
                   results={similarResults}
                   indexId={targetIndexId}
                   sourceType={sourceType}
+                  textSearchTerm={textSearchTerm}
                 />
               </div>
             </div>

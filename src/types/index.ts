@@ -93,6 +93,14 @@ export interface Segment {
   float?: number[];
 }
 
+export interface SegmentMatch {
+  sourceStartTime?: number;
+  sourceEndTime?: number;
+  targetStartTime: number;
+  targetEndTime: number;
+  score: number;
+}
+
 export interface EmbeddingSearchResult {
   id?: string;
   metadata?: {
@@ -110,11 +118,13 @@ export interface EmbeddingSearchResult {
   textScore?: number;
   videoScore?: number;
   originalSource?: 'TEXT' | 'VIDEO' | 'BOTH';
+  segmentMatches?: SegmentMatch[];
 }
 
 export interface SimilarVideoResultsProps {
   results: EmbeddingSearchResult[];
   indexId: string;
+  textSearchTerm?: string;
 }
 
 export interface SelectedVideoData {

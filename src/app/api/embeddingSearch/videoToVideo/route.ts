@@ -7,12 +7,21 @@ type QueryMatch = {
   metadata?: {
     tl_video_id?: string;
     tl_index_id?: string;
+    start_time?: number;
+    end_time?: number;
     scope?: string;
     [key: string]: unknown;
   };
   values?: number[];
   resultType?: string;
 };
+
+type EnrichedMatch = QueryMatch & {
+  sourceStartTime?: number;
+  sourceEndTime?: number;
+};
+
+const MAX_SEGMENTS_PER_VIDEO = 3;
 
 export async function POST(req: Request) {
   try {
@@ -32,7 +41,7 @@ export async function POST(req: Request) {
     });
 
     // If we found matching clips, search for similar videos for each match
-    const similarResults = [];
+    const similarResults: { matches: QueryMatch[]; sourceStartTime?: number; sourceEndTime?: number }[] = [];
     if (originalClipQuery.matches.length > 0) {
       // Process clips in parallel with concurrency limit
       const MAX_CONCURRENT_CLIPS = 3;
@@ -43,7 +52,7 @@ export async function POST(req: Request) {
         const batchResults = await Promise.all(
           clipBatch.map(async (originalClip) => {
             const vectorValues = originalClip.values || new Array(1024).fill(0);
-            return await index.query({
+            const queryResult = await index.query({
               vector: vectorValues,
               filter: {
                 tl_index_id: indexId,
@@ -52,6 +61,12 @@ export async function POST(req: Request) {
               topK: 5,
               includeMetadata: true,
             });
+
+            return {
+              matches: queryResult.matches as QueryMatch[],
+              sourceStartTime: originalClip.metadata?.start_time as number | undefined,
+              sourceEndTime: originalClip.metadata?.end_time as number | undefined,
+            };
           })
         );
 
@@ -59,32 +74,58 @@ export async function POST(req: Request) {
       }
     }
 
-    // Merge and organize results - combine all matches from all results
-    let allResults: QueryMatch[] = [];
+    // Flatten all matches with source clip info attached
+    const allEnrichedResults: EnrichedMatch[] = [];
 
-    // Process each result in the similarResults array
     for (const result of similarResults) {
-      if (result && 'matches' in result && Array.isArray(result.matches)) {
-        const formattedMatches = result.matches.map(match => ({
+      for (const match of result.matches) {
+        allEnrichedResults.push({
           ...match,
-          resultType: 'clip'
-        }));
-        allResults = [...allResults, ...formattedMatches];
+          resultType: 'clip',
+          sourceStartTime: result.sourceStartTime,
+          sourceEndTime: result.sourceEndTime,
+        });
       }
     }
 
-    // Remove duplicates (keep only the highest score for each tlVideoId)
-    const uniqueResults = Object.values(
-      allResults.reduce((acc: Record<string, typeof current>, current) => {
-        const tlVideoId = current.metadata?.tl_video_id as string;
-        if (!tlVideoId) return acc;
+    // Group by tl_video_id: keep best match + collect segment pairs
+    const videoMap: Record<string, {
+      bestMatch: EnrichedMatch;
+      segmentMatches: { sourceStartTime?: number; sourceEndTime?: number; targetStartTime: number; targetEndTime: number; score: number }[];
+    }> = {};
 
-        if (!acc[tlVideoId] || (acc[tlVideoId].score ?? 0) < (current.score ?? 0)) {
-          acc[tlVideoId] = current;
+    for (const match of allEnrichedResults) {
+      const tlVideoId = match.metadata?.tl_video_id as string;
+      if (!tlVideoId) continue;
+
+      const segmentPair = {
+        sourceStartTime: match.sourceStartTime,
+        sourceEndTime: match.sourceEndTime,
+        targetStartTime: (match.metadata?.start_time as number) ?? 0,
+        targetEndTime: (match.metadata?.end_time as number) ?? 0,
+        score: match.score ?? 0,
+      };
+
+      if (!videoMap[tlVideoId]) {
+        videoMap[tlVideoId] = {
+          bestMatch: match,
+          segmentMatches: [segmentPair],
+        };
+      } else {
+        if ((match.score ?? 0) > (videoMap[tlVideoId].bestMatch.score ?? 0)) {
+          videoMap[tlVideoId].bestMatch = match;
         }
-        return acc;
-      }, {})
-    );
+        videoMap[tlVideoId].segmentMatches.push(segmentPair);
+      }
+    }
+
+    // Build final results with top segment matches per video
+    const uniqueResults = Object.values(videoMap).map(({ bestMatch, segmentMatches }) => ({
+      ...bestMatch,
+      segmentMatches: segmentMatches
+        .sort((a, b) => b.score - a.score)
+        .slice(0, MAX_SEGMENTS_PER_VIDEO),
+    }));
 
     // Sort by score
     const sortedResults = uniqueResults.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
