@@ -154,16 +154,10 @@ const SimilarVideoResults: React.FC<
     return null;
   }
 
-  // Define similarity label and color
-  const getSimilarityLabel = (score: number, source?: string) => {
-    // BOTH source results are always High
-    if (source === "BOTH") {
-      return { label: "High", color: "green" };
-    }
-
-    // Single source cases based on score
-    if (score >= 1) return { label: "High", color: "green" };
-    if (score >= 0.5) return { label: "Medium", color: "yellow" };
+  // Define similarity label and color based on score
+  const getSimilarityLabel = (score: number, _source?: string) => {
+    if (score >= 0.9) return { label: "High", color: "green" };
+    if (score >= 0.7) return { label: "Medium", color: "yellow" };
     return { label: "Low", color: "red" };
   };
 

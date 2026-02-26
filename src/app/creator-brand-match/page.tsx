@@ -486,19 +486,13 @@ export default function CreatorBrandMatch() {
     }
   };
 
-  // Helper function to determine match level
+  // Helper function to determine match level based on score
   const getMatchLevel = (
     score: number,
-    source?: string
+    _source?: string
   ): "High" | "Medium" | "Low" => {
-    // BOTH source results are always High
-    if (source === "BOTH") {
-      return "High";
-    }
-
-    // Single source cases based on score
-    if (score >= 1) return "High";
-    if (score >= 0.5) return "Medium";
+    if (score >= 0.9) return "High";
+    if (score >= 0.7) return "Medium";
     return "Low";
   };
 
@@ -575,8 +569,13 @@ export default function CreatorBrandMatch() {
       }
     });
 
-    // Sort by score (higher score first) - labels are visual indicators only
-    return Array.from(resultMap.values()).sort((a, b) => b.score - a.score);
+    // Sort by match level first, then by score within each level
+    return Array.from(resultMap.values()).sort((a, b) => {
+      const levelA = getMatchLevelPriority(getMatchLevel(a.score, a.originalSource));
+      const levelB = getMatchLevelPriority(getMatchLevel(b.score, b.originalSource));
+      if (levelA !== levelB) return levelB - levelA;
+      return b.score - a.score;
+    });
   };
 
   // Auto-select first video when videos are loaded (for both brand and creator)
