@@ -719,8 +719,8 @@ export default function SemanticSearchPage() {
     // 🔧 NEW: Sort by confidence (high -> medium -> low) and then by score
     return results.sort((a, b) => {
       // Define confidence priority (higher number = higher priority)
-      const getConfidencePriority = (confidence: string) => {
-        switch (confidence.toLowerCase()) {
+      const getConfidencePriority = (confidence: string | undefined) => {
+        switch ((confidence || '').toLowerCase()) {
           case "high":
             return 3;
           case "medium":
