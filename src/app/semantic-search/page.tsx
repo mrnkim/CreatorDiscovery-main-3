@@ -948,8 +948,8 @@ export default function SemanticSearchPage() {
   };
 
   // 🔧 PERFORMANCE FIX: Memoize confidence class function
-  const getConfidenceClass = useCallback((confidence: string) => {
-    switch (confidence.toLowerCase()) {
+  const getConfidenceClass = useCallback((confidence: string | undefined) => {
+    switch ((confidence || '').toLowerCase()) {
       case "high":
         return "text-[#BFF3A4]";
       case "medium":
@@ -961,8 +961,8 @@ export default function SemanticSearchPage() {
     }
   }, []);
 
-  const getConfidenceStyle = useCallback((confidence: string) => {
-    switch (confidence.toLowerCase()) {
+  const getConfidenceStyle = useCallback((confidence: string | undefined) => {
+    switch ((confidence || '').toLowerCase()) {
       case "high":
         return { backgroundColor: "#30710E", borderColor: "#BFF3A4" };
       case "medium":
